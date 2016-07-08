@@ -1,0 +1,17 @@
+--
+-- {{ tbl.title }}
+--
+
+{{ tbl.description or '' }}
+
+{% for art in tbl.rows %}
+{{ loop.index }}. {{ art.title.strip() }}
+      {{ art.date }}
+      {{ art.where }}
+      {{ art.status }}
+      {{ art.authors }}{% if art.coauthorship %} ({{ art.coauthorship }}){% endif %}
+
+      Формат: {{ art.format }}
+      Объём: {{ art.size }}
+
+{% endfor %}

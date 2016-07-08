@@ -1,0 +1,13 @@
+\section{ {{ tbl.title }} }
+
+\begin{enumerate}
+    {% for it in tbl.rows %}
+      \item
+        {% for field in settings['items'] %}
+            {% set val = it[field].strip() %}
+            {% if val %}
+                {{ val }}{% if not loop.last %},{% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+\end{enumerate}

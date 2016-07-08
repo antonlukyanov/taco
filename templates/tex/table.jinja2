@@ -1,0 +1,40 @@
+\section{ {{ tbl.title }} }
+
+\begin{longtable}[l]{ {{ settings['table_def'] }} }
+    \hline
+    {% for col in settings['columns'] %}
+        \multicolumn{1}{ {{ '|' if loop.first }}{{ col['header_col_def'] }}| }{
+            \ss
+            {% if col['field'] == 'INDEX' %}
+                {{ col['name'].replace('№', '\\No~') }}
+            {% else %}
+                {{ col['name'] }}
+            {% endif %}
+        }
+
+        {% if not loop.last %}
+            &
+        {% else %}
+            \\
+        {% endif %}
+
+    {% endfor %}
+
+    {% for art in tbl.rows %}
+    \hline
+        {% set outer = loop %}
+        {% for col in settings['columns'] %}
+            {% if col['field'] == 'INDEX' %}
+                {{ outer.index }}
+            {% else %}
+                {{ art[col['field']] or '' }}
+            {% endif %}
+            {% if not loop.last %}
+                &
+            {% endif %}
+        {% endfor %}
+    \\
+    {% endfor %}
+
+    \hline
+\end{longtable}

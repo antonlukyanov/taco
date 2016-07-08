@@ -1,0 +1,3 @@
+{% for it in tbl.rows %}
+{{ loop.index }}. {{ it.title.strip() }}{{ ', ' + it.place or '' }}
+{% endfor %}

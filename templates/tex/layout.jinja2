@@ -1,0 +1,64 @@
+\documentclass[10pt, titlepage]{article}
+
+\newif\ifnp
+\npfalse
+
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{longtable}
+\usepackage{verbatim}
+\usepackage{array}
+\usepackage[
+    left={{ settings.margin_left }}, right={{ settings.margin_right }},
+    top={{ settings.margin_top }}, bottom={{ settings.margin_bottom }},
+    paperwidth={{ settings.width }}, paperheight={{ settings.height }}
+]{geometry}
+
+\sloppy
+
+\def\hr#1{\hbox to #1{\hrulefill}}
+\def\st{\rule{0pt}{24pt}}
+\def\t#1{\mbox{#1}}
+\def\No{\textnumero}
+
+\newcounter{abc}
+\setcounter{abc}{0}
+\def\cc{\addtocounter{abc}{1}\arabic{abc}.}
+
+\def\ss{\small\bf}
+
+% Thanks to http://tex.stackexchange.com/a/12712
+%
+% 1. \let\newline\\ to allow to use \newline for manual line breaks within a cell (note that
+%    \centering & friends change the meaning of \\).
+%
+% 2. \arraybackslash (i.e., \let\\\tabularnewline) to allow (again) to use \\ for ending rows.
+%
+% 3. \hspace{0pt} to allow the first word in a cell to be hyphenated
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\tabcolsep=2pt
+
+\begin{document}
+    \begin{center}
+        {\bf \huge{
+                {{ layout['title'] }}
+             }
+        }
+    \end{center}
+    \begin{center}
+        \large{
+            {{ layout['subtitle'] }}
+        }
+        \vspace{1cm}
+    \end{center}
+
+    {% for section in sections %}
+        {{ section }}
+        \bigskip
+    {% endfor %}
+\end{document}
