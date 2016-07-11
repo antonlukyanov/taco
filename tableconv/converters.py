@@ -36,7 +36,7 @@ class BaseConverter(ABC):
         pass
 
 
-class ListConverter(BaseConverter):
+class TextConverter(BaseConverter):
     def __init__(self, ext, theme):
         super().__init__(ext, theme)
         self._fallback_tpl_path = path.join(self._path_prefix, 'list.jinja2')
@@ -46,34 +46,45 @@ class ListConverter(BaseConverter):
         pass
 
     def convert(self, tables, out_filepath):
-        layout = None
-        layout_settings = None
         sections = []
+
+        layout, layout_s = tables[0]['table'], tables[0]['settings']
+        tables = tables[1:]
+
+        allowed_width = layout_s.width - layout_s.margin_left\
+                                       - layout_s.margin_right
 
         for data in tables:
             tp, table, settings = data['type'], data['table'], data['settings']
+            self._prepare_settings_hook(settings)
 
-            if tp != 'layout':
-                self._prepare_settings_hook(settings)
+            if settings['template'] == 'table':
+                total_width = 0
+                for col in settings['columns']:
+                    width, unit = layout_s.parse_length(col['width'])
+                    if unit == 'cm':
+                        total_width += Cm(width).mm
+                    else:
+                        total_width += width
 
-            if tp == 'layout':
-                layout = table
-                layout_settings = settings
-            else:
-                # Loading template.
-                tpl_path = path.join(self._path_prefix, settings['template']) + '.jinja2'
-                # If template does not exist then fall back to list.jinja2.
-                if not path.isfile(path.join('templates', tpl_path)):
-                    tpl_path = self._fallback_tpl_path
-                tpl = env.get_template(tpl_path)
-                # Rendering template.
-                sections.append(tpl.render(tbl=table, settings=settings))
+                if total_width > allowed_width:
+                    raise RuntimeError('Total columns width of %.2f cm exceeded available width of'
+                                       '%.2f cm.' % (Mm(total_width).cm, Mm(allowed_width).cm))
+
+            # Loading template.
+            tpl_path = path.join(self._path_prefix, settings['template']) + '.jinja2'
+            # If template does not exist then fall back to list.jinja2.
+            if not path.isfile(path.join('templates', tpl_path)):
+                tpl_path = self._fallback_tpl_path
+            tpl = env.get_template(tpl_path)
+            # Rendering template.
+            sections.append(tpl.render(tbl=table, settings=settings))
 
         with open(out_filepath, 'w') as f:
-            f.write(self._layout.render(sections=sections, layout=layout, settings=layout_settings))
+            f.write(self._layout.render(sections=sections, layout=layout, settings=layout_s))
 
 
-class Latex2PdfConverter(ListConverter):
+class Latex2PdfConverter(TextConverter):
     def __init__(self, ext, theme):
         super().__init__(ext, theme)
 
@@ -171,24 +182,10 @@ class DocxConverter(BaseConverter):
 
     def _setup_page(self, doc, settings):
         section = doc.sections[0]
-        width = int(settings.width.replace('mm', ''))
-        height = int(settings.height.replace('mm', ''))
-        section.page_width, section.page_height = (Mm(width), Mm(height))
+        section.page_width, section.page_height = (Mm(settings.width), Mm(settings.height))
 
         for side in ['left', 'right', 'top', 'bottom']:
-            val = getattr(settings, 'margin_%s' % side)
-            m = re.match('^([0-9]{1,4}(\.[0-9]{1,3})?)(mm|cm)$', val, re.IGNORECASE)
-            if m is not None:
-                unit = m.group(3)
-                margin = float(m.group(1))
-            else:
-                raise RuntimeError('Cannot parse margin: %s.' % val)
-
-            if unit == 'mm':
-                margin = Mm(margin)
-            else:
-                margin = Cm(margin)
-
+            margin = Mm(getattr(settings, 'margin_%s' % side))
             setattr(section, '%s_margin' % side, margin)
 
         if settings.orientation == 'landscape':

@@ -2,6 +2,7 @@ import re
 from builtins import property
 from operator import attrgetter
 
+from docx.shared import Cm
 
 class Row(dict):
     def __init__(self, *args, **kwargs):
@@ -85,20 +86,48 @@ class PageLayout:
         }
 
         ps = self._settings['paper_setup']
-        if re.match('^[aA][0-6]$', ps['size']) is None:
-            raise RuntimeError('Incorrect paper size: %s' % ps['size'])
+        ps['size'] = ps['size'].lower()
+        if ps['size'] not in self.paper_size:
+            raise RuntimeError(
+                'Incorrect paper size: %s. Supported paper sizes are: %s.' %
+                (ps['size'], ', '.join(self.paper_size.keys()))
+            )
+
+        if ps['orientation'] not in ['landscape', 'portrait']:
+            raise RuntimeError('Orientation must be either "landscape" or "portrait".')
+
+        for side in ['left', 'right', 'top', 'bottom']:
+            length, unit = self.parse_length(ps['margins'][side])
+            ps['margins'][side] = Cm(length).mm if unit == 'cm' else length
+
+    def parse_length(self, length):
+        length = length.lower()
+        m = re.match(
+            '^([0-9]{1,4}(\.[0-9]{1,3})?)(mm|cm)$',
+            length
+        )
+        if m is not None:
+            value = float(m.group(1))
+            unit = m.group(3)
+            if unit not in ['mm', 'cm']:
+                raise RuntimeError('Unit %s is not suppported.' % unit)
+            if value <= 0:
+                raise RuntimeError('Length must be positive number.')
+        else:
+            raise RuntimeError('Could not parse length.')
+        return float(value), unit
 
     @property
     def size(self):
-        return self._settings['paper_setup']['size'].lower()
+        return self._settings['paper_setup']['size']
 
     @property
     def width(self):
-        return '%dmm' % self.paper_size[self.size][0]
+        return self.paper_size[self.size][0]
 
     @property
     def height(self):
-        return '%dmm' % self.paper_size[self.size][1]
+        return self.paper_size[self.size][1]
 
     @property
     def margins(self):

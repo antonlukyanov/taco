@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 
 import argparse
-import collections
 import re
 import os.path as path
 import yaml
 
-from core import types
-from core import converters
+from tableconv import types
+from tableconv import converters
 
 
 ALLOWED_TYPES = ['txt', 'pdf', 'tex', 'docx']
 
 
-def get_ext(filepath):
+def parse_ext(filepath):
     m = re.match('.+\.([^\.]+)$', filepath)
     if m is None or m.group(1) not in ALLOWED_TYPES:
         raise RuntimeError('Export to specified file type is not supported. See help.')
@@ -26,7 +25,7 @@ def load_converter(ext, theme):
     elif ext == 'docx':
         cvt = converters.DocxConverter(ext, theme)
     else:
-        cvt = converters.ListConverter(ext, theme)
+        cvt = converters.TextConverter(ext, theme)
 
     return cvt
 
@@ -60,7 +59,13 @@ def load_data(filepaths, ext, theme=None):
             fp, fp_ext = path.splitext(filepaths[i])
             settings_path = fp + '_settings' + fp_ext
             settings = load_settings(settings_path)
-            settings = settings[theme][ext] if theme else settings[ext]
+
+            if theme and theme in settings:
+                settings = settings[theme]
+            if ext in settings:
+                settings = settings[ext]
+            else:
+                settings = None
 
             if tp == 'layout':
                 layout = data
@@ -98,7 +103,8 @@ def load_data(filepaths, ext, theme=None):
 
 
 parser = argparse.ArgumentParser(
-    description='Simple converter of table-like data to some common data types like pdf or docx.'
+    description='Simple converter of table-like data in YAML format to some common data types like '
+                'pdf or docx.'
 )
 parser.add_argument(
     'input',
@@ -110,13 +116,13 @@ parser.add_argument(
 )
 parser.add_argument(
     '-t', '--theme',
-    help='Use specified theme is a collection of templates located in the folder '
+    help='Use specified theme. Theme is a collection of templates located in the folder '
          'templates/<ext>/<theme>.',
     action='store'
 )
 args = parser.parse_args()
 
-ext = get_ext(args.output)
+ext = parse_ext(args.output)
 cvt = load_converter(ext, args.theme)
 tables = load_data(args.input, ext, args.theme)
 cvt.convert(tables, args.output)
