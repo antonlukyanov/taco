@@ -95,6 +95,8 @@ class Latex2PdfConverter(TextConverter):
         filepath_tex = path.splitext(out_filepath)[0] + '.tex'
         super().convert(tables, filepath_tex)
         out_dir = path.dirname(out_filepath)
+        if not out_dir:
+            out_dir = path.curdir
         completed = sp.run(['pdflatex',
                             '-output-directory=%s' % out_dir,
                             filepath_tex])
