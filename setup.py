@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='taco.py',
-      version='0.1a',
+      version='0.1a0',
       description='Simple converter of table-like data in YAML format to some common data types'
                   'like pdf or docx.',
       url='http://github.com/antonlukyanov/taco',
@@ -12,4 +12,5 @@ setup(name='taco.py',
       license='MIT',
       packages=['tableconv'],
       scripts=['taco.py'],
-      zip_safe=False)
+      zip_safe=False,
+      include_package_data=True)

@@ -16,20 +16,11 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.section import WD_ORIENTATION
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
-env = jj.Environment(loader=jj.FileSystemLoader('./templates'),
-                     trim_blocks=True,
-                     lstrip_blocks=True,
-                     comment_start_string='{--',
-                     comment_end_string='--}')
-
 
 class BaseConverter(ABC):
     def __init__(self, ext, theme):
         self._ext = ext
         self._theme = theme
-        self._path_prefix = path.join(self._ext, self._theme or '')
-        self._templates_path = path.join('templates', self._path_prefix)
-        self._settings_path = path.join('settings', self._path_prefix)
 
     @abstractmethod
     def convert(self, lists, out_filepath):
@@ -37,10 +28,20 @@ class BaseConverter(ABC):
 
 
 class TextConverter(BaseConverter):
-    def __init__(self, ext, theme):
+    def __init__(self, ext, theme, templates_dir=None):
         super().__init__(ext, theme)
+        self._path_prefix = path.join(self._ext, self._theme or '')
+        self._templates_dir = templates_dir or path.join(path.dirname(__file__), 'templates')
+        self._templates_path = path.join(self._templates_dir, self._path_prefix)
+        self._env = jj.Environment(
+            loader=jj.FileSystemLoader(self._templates_dir),
+            trim_blocks=True,
+            lstrip_blocks=True,
+            comment_start_string='{--',
+            comment_end_string='--}'
+        )
         self._fallback_tpl_path = path.join(self._path_prefix, 'list.jinja2')
-        self._layout = env.get_template('%s/layout.jinja2' % self._path_prefix)
+        self._layout = self._env.get_template('%s/layout.jinja2' % self._path_prefix)
 
     def _prepare_settings_hook(self, settings):
         pass
@@ -72,11 +73,13 @@ class TextConverter(BaseConverter):
                                        '%.2f cm.' % (Mm(total_width).cm, Mm(allowed_width).cm))
 
             # Loading template.
-            tpl_path = path.join(self._path_prefix, settings['template']) + '.jinja2'
+            tpl_name = settings['template'] + '.jinja2'
             # If template does not exist then fall back to list.jinja2.
-            if not path.isfile(path.join('templates', tpl_path)):
+            if not path.isfile(path.join(self._templates_path, tpl_name)):
                 tpl_path = self._fallback_tpl_path
-            tpl = env.get_template(tpl_path)
+            else:
+                tpl_path = path.join(self._path_prefix, tpl_name)
+            tpl = self._env.get_template(tpl_path)
             # Rendering template.
             sections.append(tpl.render(tbl=table, settings=settings))
 
@@ -85,8 +88,8 @@ class TextConverter(BaseConverter):
 
 
 class Latex2PdfConverter(TextConverter):
-    def __init__(self, ext, theme):
-        super().__init__(ext, theme)
+    def __init__(self, ext, theme, templates_dir=None):
+        super().__init__(ext, theme, templates_dir)
 
     def convert(self, tables, out_filepath):
         filepath_tex = path.splitext(out_filepath)[0] + '.tex'
@@ -136,7 +139,6 @@ class Latex2PdfConverter(TextConverter):
 class DocxConverter(BaseConverter):
     def __init__(self, ext, theme):
         super().__init__(ext, theme)
-        self._fallback_tpl_path = path.join('templates', self._path_prefix, 'list.yml')
 
     def _setup_styles(self, doc):
         title = doc.styles.add_style('listconv.title', WD_STYLE_TYPE.PARAGRAPH)

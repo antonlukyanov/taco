@@ -19,13 +19,13 @@ def parse_ext(filepath):
     return m.group(1)
 
 
-def load_converter(ext, theme):
+def load_converter(ext, theme, templates_dir):
     if ext == 'pdf':
-        cvt = converters.Latex2PdfConverter('tex', theme)
+        cvt = converters.Latex2PdfConverter('tex', theme, templates_dir)
     elif ext == 'docx':
         cvt = converters.DocxConverter(ext, theme)
     else:
-        cvt = converters.TextConverter(ext, theme)
+        cvt = converters.TextConverter(ext, theme, templates_dir)
 
     return cvt
 
@@ -117,12 +117,17 @@ parser.add_argument(
 parser.add_argument(
     '-t', '--theme',
     help='Use specified theme. Theme is a collection of templates located in the folder '
-         'templates/<ext>/<theme>.',
+         'templates/<extension>/<theme>.',
+    action='store'
+)
+parser.add_argument(
+    '-T', '--templates-dir',
+    help='Search templates in specified directory.',
     action='store'
 )
 args = parser.parse_args()
 
 ext = parse_ext(args.output)
-cvt = load_converter(ext, args.theme)
+cvt = load_converter(ext, args.theme, args.templates_dir)
 tables = load_data(args.input, ext, args.theme)
 cvt.convert(tables, args.output)
