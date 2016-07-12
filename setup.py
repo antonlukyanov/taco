@@ -13,4 +13,5 @@ setup(name='taco.py',
       packages=['tableconv'],
       scripts=['taco.py'],
       zip_safe=False,
-      include_package_data=True)
+      include_package_data=True,
+      install_requires=['python-docx>=0.8.6', 'pyyaml>=3.11', 'jinja2>=2.8'])

@@ -8,7 +8,45 @@ time to add it to all files. Also if you need to sort your table or reorder colu
 to spend a lot of time reordering and sorting it by hand (especially, if it is in latex or txt). 
 
 Main features:
+
 - Tables are stored in YAML, so it is easy to read, edit and store them under repository.
 - Tables are easily exported to pdf, docx or txt formats.
 - Tables can be automatically sorted by specified columns when exporting.
 - It is possible to create custom templates.
+
+## Requirements
+
+### Python requirements
+
+- Python 3.5+
+- PyYAML
+- python-docx
+- jinja2
+
+### LaTeX requirements
+
+- pdflatex
+
+LaTeX packages:
+    
+- inputenc
+- babel
+- longtable
+- array
+- geometry
+
+## Installation
+
+Run:
+
+```sh
+$ git clone https://github.com/antonlukyanov/taco.git
+$ cd taco
+$ ./setup install
+```
+
+or:
+
+```sh
+$ pip3 install taco.py
+```
